@@ -75,7 +75,7 @@
       width: 100%;
       height: 100%;
       z-index: -1;
-      background-image: inherit; /* Inherits the random image set by JavaScript */
+      background-image: inherit;
       background-size: cover;
       background-position: center;
       transition: background-image 0.8s ease-in-out;
@@ -302,6 +302,7 @@
     .delay-4 { animation-delay: 0.4s; }
     .delay-5 { animation-delay: 0.5s; }
     .delay-6 { animation-delay: 0.6s; }
+    .delay-7 { animation-delay: 0.7s; }
 
     /* Mobile Responsiveness */
     @media (max-width: 768px) {
@@ -321,7 +322,7 @@
         margin: 10px;
       }
       table {
-        min-width: 600px; /* Allow horizontal scroll */
+        min-width: 600px;
       }
     }
   </style>
@@ -383,12 +384,17 @@
       <div id="bmiResult" style="margin-top: 15px; padding: 15px; background-color: var(--header-bg); border: 1px solid var(--border-color); border-radius: 5px; display: none; line-height: 1.6;"></div>
     </div>
 
-    <div class="chart-container animated-section delay-5">
-      <h3>Calorie Trends</h3>
+    <div id="predictionChartContainer" class="chart-container animated-section delay-5" style="display: none;">
+      <h3>Predicted Weight Change (kg)</h3>
+      <canvas id="weightPredictionChart" height="100"></canvas>
+    </div>
+
+    <div class="chart-container animated-section delay-6">
+      <h3>Daily Calorie Trends</h3>
       <canvas id="calorieChart" height="100"></canvas>
     </div>
 
-    <div class="table-responsive animated-section delay-6">
+    <div class="table-responsive animated-section delay-7">
       <table id="dataTable">
         <thead>
           <tr>
@@ -437,8 +443,13 @@
     let headers = ["Date", "Meal", "Food Item", "Quantity", "Calories In", "Calories Out"];
     let sortAscending = true;
     let sortCol = 0;
+    
+    // Global Chart Variables
     let myChart = null;
+    let weightChart = null;
     let displayDataGlobal = [];
+    let predictionLabelsGlobal = [];
+    let predictionDataGlobal = [];
 
     // Theme Toggle Logic
     const themeBtn = document.getElementById('themeToggleBtn');
@@ -450,7 +461,10 @@
       const isDark = document.body.classList.toggle('dark-theme');
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
       themeBtn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+      
+      // Update charts to match new theme
       if (myChart && displayDataGlobal.length > 0) updateChart(displayDataGlobal);
+      if (weightChart && predictionLabelsGlobal.length > 0) renderWeightChart(predictionLabelsGlobal, predictionDataGlobal);
     });
 
     // Food Suggestions
@@ -463,7 +477,6 @@
       "Processed meats", "High-sugar cereals", "Candies and sweets", "Heavy creamy dressings"
     ];
 
-    // A simple CSV parser 
     function parseCSV(text) {
       const lines = text.trim().split("\n");
       const result = [];
@@ -476,23 +489,21 @@
 
     function setRandomBackground() {
       const bgImages = [
-        "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2000&auto=format&fit=crop", // Healthy food
-        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2000&auto=format&fit=crop", // Yoga
-        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2000&auto=format&fit=crop", // Gym
-        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2000&auto=format&fit=crop", // Healthy eating
-        "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2000&auto=format&fit=crop", // Weights
-        "https://images.unsplash.com/photo-1540420773420-3366772f4999?q=80&w=2000&auto=format&fit=crop", // Salad
-        "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2000&auto=format&fit=crop"  // Runner
+        "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2000&auto=format&fit=crop", 
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2000&auto=format&fit=crop", 
+        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2000&auto=format&fit=crop", 
+        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2000&auto=format&fit=crop", 
+        "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2000&auto=format&fit=crop", 
+        "https://images.unsplash.com/photo-1540420773420-3366772f4999?q=80&w=2000&auto=format&fit=crop", 
+        "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2000&auto=format&fit=crop"  
       ];
       
-      // Pick a random image on every load
       const randomIndex = Math.floor(Math.random() * bgImages.length);
       const selectedImage = bgImages[randomIndex];
       document.body.style.backgroundImage = `url('${selectedImage}')`;
     }
 
     function init() {
-      // Set today's date as default in the form
       document.getElementById('newDate').valueAsDate = new Date();
       displaySuggestions();
       setRandomBackground();
@@ -541,18 +552,17 @@
       const ctx = document.getElementById('calorieChart').getContext('2d');
       const dateMap = {};
       
-      // Aggregate calories per date
       dataToRender.forEach(row => {
         const date = row[0];
         const meal = row[1] ? row[1].trim() : '';
-        if (!date || meal === 'Summary') return; // Skip summary rows for the chart calculation
+        if (!date || meal === 'Summary') return; 
         
         if (!dateMap[date]) dateMap[date] = { in: 0, out: 0 };
         const cIn = parseFloat(row[4]);
         const cOut = parseFloat(row[5]);
         
         if (!isNaN(cIn)) dateMap[date].in += cIn;
-        if (!isNaN(cOut)) dateMap[date].out += Math.abs(cOut); // Handle negative exercise values
+        if (!isNaN(cOut)) dateMap[date].out += Math.abs(cOut);
       });
 
       const labels = Object.keys(dateMap).sort();
@@ -562,7 +572,7 @@
       if (myChart) myChart.destroy();
 
       const isDark = document.body.classList.contains('dark-theme');
-      Chart.defaults.color = isDark ? '#86868b' : '#86868b'; // Apple secondary text color
+      Chart.defaults.color = isDark ? '#86868b' : '#86868b'; 
       Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
       const gridColor = isDark ? '#333' : '#eee';
 
@@ -585,12 +595,58 @@
       });
     }
 
+    function renderWeightChart(labels, data) {
+      const ctx = document.getElementById('weightPredictionChart').getContext('2d');
+      if (weightChart) weightChart.destroy();
+
+      const isDark = document.body.classList.contains('dark-theme');
+      const gridColor = isDark ? '#333' : '#eee';
+      const lineColor = isDark ? '#ff9f0a' : '#ff9500'; // Apple-style orange
+      const fillColor = isDark ? 'rgba(255, 159, 10, 0.15)' : 'rgba(255, 149, 0, 0.15)';
+
+      weightChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Predicted Weight (kg)',
+            data: data,
+            borderColor: lineColor,
+            backgroundColor: fillColor,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0, // Smooth continuous line
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            intersect: false,
+            mode: 'index',
+          },
+          scales: {
+            y: { 
+              grid: { color: gridColor },
+              title: { display: true, text: 'Weight (kg)' }
+            },
+            x: { 
+              grid: { color: gridColor },
+              ticks: { maxTicksLimit: 12 }, // Prevent label crowding for long durations
+              title: { display: true, text: 'Time (Days)' }
+            }
+          }
+        }
+      });
+    }
+
     function renderTable() {
       const tbody = document.querySelector('#dataTable tbody');
       const dateFilterValue = document.getElementById('filter-0') ? document.getElementById('filter-0').value : 'all';
       const mealFilterValue = document.getElementById('filter-1') ? document.getElementById('filter-1').value : 'all';
       
-      tbody.innerHTML = ''; // Clear current rows
+      tbody.innerHTML = ''; 
 
       // Update Sort Arrows
       for (let i = 0; i < 6; i++) {
@@ -620,7 +676,6 @@
         let valA = a[sortCol] !== undefined ? a[sortCol].trim() : '';
         let valB = b[sortCol] !== undefined ? b[sortCol].trim() : '';
 
-        // Attempt numeric sort for specific columns (Calories In/Out)
         if (sortCol === 4 || sortCol === 5) {
           const numA = parseFloat(valA);
           const numB = parseFloat(valB);
@@ -653,7 +708,6 @@
         tbody.appendChild(tr);
       });
 
-      // Update chart with the currently filtered/displayed data
       updateChart(displayData);
       displayDataGlobal = displayData;
     }
@@ -684,29 +738,21 @@
       const calIn = document.getElementById('newCalIn').value;
       const calOut = document.getElementById('newCalOut').value;
 
-      if (!date) {
-        alert('Please select a date.');
-        return;
-      }
-      if (!meal) {
-        alert('Please select a meal/category.');
+      if (!date || !meal) {
+        alert('Please select a date and meal category.');
         return;
       }
 
-      // Sanitize commas to avoid breaking simple CSV parse
       const safeFood = food.replace(/,/g, ' ');
       const safeQuantity = quantity.replace(/,/g, ' ');
-
-      // Push to data array
       const newRow = [date, meal, safeFood, safeQuantity, calIn, calOut];
+      
       rawData.push(newRow);
-
       populateFilter();
       if (document.getElementById('filter-0')) document.getElementById('filter-0').value = 'all'; 
       if (document.getElementById('filter-1')) document.getElementById('filter-1').value = 'all'; 
       renderTable();
 
-      // Clear text/number inputs
       document.getElementById('newFood').value = '';
       document.getElementById('newQuantity').value = '';
       document.getElementById('newCalIn').value = '';
@@ -732,14 +778,13 @@
       reader.readAsText(file);
     });
 
-    // Save/Download CSV Logic
+    // Download CSV Logic
     document.getElementById('downloadBtn').addEventListener('click', async () => {
       let csvContent = headers.join(",") + "\n";
       rawData.forEach(row => {
         csvContent += row.join(",") + "\n";
       });
 
-      // Try to save over the existing file using the File System Access API
       if (window.showSaveFilePicker) {
         try {
           const handle = await window.showSaveFilePicker({
@@ -752,12 +797,11 @@
           alert('Data saved successfully to ' + handle.name);
           return;
         } catch (err) {
-          if (err.name !== 'AbortError') console.error('Save failed, falling back to download:', err);
-          else return; // user aborted
+          if (err.name !== 'AbortError') console.error('Save failed:', err);
+          else return; 
         }
       }
 
-      // Fallback for older browsers (downloads a new file)
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -769,7 +813,7 @@
       document.body.removeChild(link);
     });
 
-    // BMI Calculator Logic
+    // BMI Calculator & Graph Logic
     document.getElementById('calcBmiBtn').addEventListener('click', () => {
       const age = parseFloat(document.getElementById('userAge').value);
       const weight = parseFloat(document.getElementById('userWeight').value);
@@ -781,7 +825,6 @@
         return;
       }
 
-      // Calculate BMI
       const heightInMeters = height / 100;
       const bmi = weight / (heightInMeters * heightInMeters);
       
@@ -791,21 +834,19 @@
       else if (bmi < 30) resultHTML += `(Overweight)<br>`;
       else resultHTML += `(Obese)<br>`;
 
-      // Calculate BMR (Mifflin-St Jeor equation)
       let bmr = (10 * weight) + (6.25 * height) - (5 * age);
       bmr += (gender === 'male') ? 5 : -161;
-      resultHTML += `<strong>Basal Metabolic Rate (BMR):</strong> ${bmr.toFixed(0)} kcal/day<br><hr style="border-top:1px solid #ddd; margin: 10px 0;">`;
+      resultHTML += `<strong>Basal Metabolic Rate (BMR):</strong> ${bmr.toFixed(0)} kcal/day<br><hr style="border-top:1px solid var(--border-color); margin: 10px 0;">`;
 
       if (bmi > 24.9) {
         const targetBmi = 24.9;
         const targetWeight = targetBmi * (heightInMeters * heightInMeters);
         const weightToLose = weight - targetWeight;
-        const totalCaloriesToBurn = weightToLose * 7700; // ~7700 kcal to burn 1 kg of fat
+        const totalCaloriesToBurn = weightToLose * 7700; 
         
         resultHTML += `<strong>Target Weight (for normal BMI of 24.9):</strong> ${targetWeight.toFixed(2)} kg<br>`;
-        resultHTML += `<strong>Weight to Lose:</strong> ${weightToLose.toFixed(2)} kg<br><hr style="border-top:1px solid #ddd; margin: 10px 0;">`;
+        resultHTML += `<strong>Weight to Lose:</strong> ${weightToLose.toFixed(2)} kg<br><hr style="border-top:1px solid var(--border-color); margin: 10px 0;">`;
 
-        // Calculate Averages from Table Data
         const uniqueDates = [...new Set(rawData.map(row => row[0]))].filter(Boolean);
         const numDays = uniqueDates.length || 1;
 
@@ -818,13 +859,13 @@
             const cIn = parseFloat(row[4]);
             const cOut = parseFloat(row[5]);
             if (!isNaN(cIn)) totalIn += cIn;
-            if (!isNaN(cOut)) totalOut += Math.abs(cOut); // Handle negative exercise values safely
+            if (!isNaN(cOut)) totalOut += Math.abs(cOut); 
           }
         });
 
         const avgIn = totalIn / numDays;
         const avgOut = totalOut / numDays;
-        const tdee = bmr + avgOut; // Total Daily Energy Expenditure
+        const tdee = bmr + avgOut; 
         const dailyDeficit = tdee - avgIn;
 
         resultHTML += `<strong>Average Calories In (from data):</strong> ${avgIn.toFixed(0)} kcal/day<br>`;
@@ -834,12 +875,39 @@
 
         if (dailyDeficit > 0) {
           const daysRemaining = totalCaloriesToBurn / dailyDeficit;
-          resultHTML += `<strong style="color: #27ae60; font-size: 16px;">Estimated Days to Reach Target BMI: ${Math.ceil(daysRemaining)} days (~${(daysRemaining/30).toFixed(1)} months)</strong>`;
+          resultHTML += `<strong style="color: var(--success-color); font-size: 16px;">Estimated Days to Reach Target BMI: ${Math.ceil(daysRemaining)} days (~${(daysRemaining/30).toFixed(1)} months)</strong>`;
+          
+          // Generate data for Weight Prediction Chart
+          predictionLabelsGlobal = [];
+          predictionDataGlobal = [];
+          
+          const totalDays = Math.ceil(daysRemaining);
+          const maxPoints = 80; // Limit points plotted so the browser doesn't freeze on massive durations
+          const step = Math.max(1, Math.floor(totalDays / maxPoints));
+
+          for (let i = 0; i <= totalDays; i += step) {
+            predictionLabelsGlobal.push(`Day ${i}`);
+            const currentPredictedWeight = weight - (i * dailyDeficit / 7700);
+            predictionDataGlobal.push(currentPredictedWeight.toFixed(2));
+          }
+          
+          // Guarantee the final target weight gets plotted at the end
+          if (totalDays % step !== 0) {
+            predictionLabelsGlobal.push(`Day ${totalDays}`);
+            predictionDataGlobal.push(targetWeight.toFixed(2));
+          }
+
+          // Show and Render Line Chart
+          document.getElementById('predictionChartContainer').style.display = 'block';
+          renderWeightChart(predictionLabelsGlobal, predictionDataGlobal);
+
         } else {
-          resultHTML += `<strong style="color: #e74c3c; font-size: 16px;">Calorie Deficit Required:</strong> Your current average intake exceeds your expenditure. Reduce calorie intake or increase activity to start losing weight.`;
+          resultHTML += `<strong style="color: #ff3b30; font-size: 16px;">Calorie Deficit Required:</strong> Your current average intake exceeds your expenditure. Reduce calorie intake or increase activity to start losing weight.`;
+          document.getElementById('predictionChartContainer').style.display = 'none';
         }
       } else {
          resultHTML += `You are already at or below a normal BMI! Keep up the healthy lifestyle.`;
+         document.getElementById('predictionChartContainer').style.display = 'none';
       }
 
       const resultDiv = document.getElementById('bmiResult');
@@ -847,7 +915,6 @@
       resultDiv.style.display = 'block';
     });
 
-    // Start execution
     init();
   </script>
 </body>
