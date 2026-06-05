@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Data Tracker</title>
+  <link rel="icon"  type="image/x-icon" href="https://static.thenounproject.com/png/4861115-200.png"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-color: #f4f7f6;
+      --text-color: #333;
+      --heading-color: #2c3e50;
+      --card-bg: #fff;
+      --border-color: #ced4da;
+      --hover-bg: #f1f3f5;
+      --primary-color: #3498db;
+      --primary-hover: #2980b9;
+      --success-color: #27ae60;
+      --success-hover: #219653;
+      --header-bg: #f8f9fa;
+      --header-text: #495057;
+      --suggestion-bg: #d1ecf1;
+      --suggestion-text: #0c5460;
+      --suggestion-border: #bee5eb;
+      --table-border: #eee;
+      --summary-bg: #e9ecef;
+      --btn-text: #fff;
+      --input-bg: #fff;
+    }
+
+    body.dark-theme {
+      --bg-color: #121212;
+      --text-color: #e0e0e0;
+      --heading-color: #e0e0e0;
+      --card-bg: #1e1e1e;
+      --border-color: #333;
+      --hover-bg: #2d2d2d;
+      --primary-color: #bb86fc;
+      --primary-hover: #985eff;
+      --success-color: #03dac6;
+      --success-hover: #018786;
+      --header-bg: #2c2c2c;
+      --header-text: #e0e0e0;
+      --suggestion-bg: #004d40;
+      --suggestion-text: #b2dfdb;
+      --suggestion-border: #00695c;
+      --table-border: #333;
+      --summary-bg: #383838;
+      --btn-text: #000;
+      --input-bg: #2c2c2c;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.4s, color 0.4s;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: var(--heading-color);
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .th-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sort-header {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+    .sort-header:hover {
+      color: #3498db;
+    }
+    .sort-arrow {
+      font-size: 10px;
+      color: #999;
+      margin-left: 4px;
+    }
+    .col-filter {
+      padding: 4px;
+      font-size: 12px;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    select, button, input {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border-color);
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      border-radius: 5px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    select {
+      cursor: pointer;
+    }
+    button {
+      background-color: var(--primary-color);
+      color: var(--btn-text);
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+    }
+    button:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Food Suggestions & Chart Styles */
+    .suggestion-box {
+      background-color: var(--suggestion-bg);
+      color: var(--suggestion-text);
+      padding: 15px 20px;
+      border: 1px solid var(--suggestion-border);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    .chart-container {
+      background: var(--card-bg);
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    
+    /* New Form Styles */
+    .add-entry-form {
+      background: var(--card-bg);
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+      transition: background-color 0.4s;
+    }
+    .add-entry-form h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: var(--heading-color);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .form-grid input, .form-grid select {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .btn-success {
+      background-color: var(--success-color);
+    }
+    .btn-success:hover {
+      background-color: var(--success-hover);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: background-color 0.4s;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--table-border);
+      padding: 12px 15px;
+      text-align: left;
+    }
+    th {
+      background-color: var(--header-bg);
+      font-weight: 600;
+      color: var(--header-text);
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover {
+      background-color: var(--hover-bg);
+    }
+    /* Summary rows styling */
+    tr.summary-row {
+      background-color: var(--summary-bg);
+      font-weight: bold;
+    }
+    tr.exercise-row {
+      color: #27ae60;
+    }
+
+    /* Header Layout */
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animated-section {
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+    .delay-6 { animation-delay: 0.6s; }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      th, td {
+        padding: 10px;
+        font-size: 14px;
+      }
+      .container {
+        margin: 10px;
+      }
+      table {
+        min-width: 600px; /* Allow horizontal scroll */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-container">
+      <h1>Health Data Tracker</h1>
+      <button id="themeToggleBtn">🌙 Dark Mode</button>
+    </div>
+
+    <!-- Daily Food Tip Section -->
+    <div id="suggestionBox" class="suggestion-box animated-section delay-1"></div>
+
+    <!-- File Upload Section -->
+    <div class="add-entry-form animated-section delay-2">
+      <h3>Load Data</h3>
+      <input type="file" id="csvFileInput" accept=".csv">
+    </div>
+
+    <!-- New Form Section -->
+    <div class="add-entry-form animated-section delay-3">
+      <h3>Add New Entry</h3>
+      <div class="form-grid">
+        <input type="date" id="newDate" required>
+        <select id="newMeal">
+          <option value="Morning">Morning</option>
+          <option value="Breakfast/Lunch">Breakfast/Lunch</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Lunch/Dinner">Lunch/Dinner</option>
+          <option value="Snack">Snack</option>
+          <option value="Evening">Evening</option>
+          <option value="Dinner">Dinner</option>
+          <option value="Exercise">Exercise</option>
+          <option value="Summary">Summary</option>
+        </select>
+        <input type="text" id="newFood" placeholder="Food Item (e.g. Rice)">
+        <input type="text" id="newQuantity" placeholder="Quantity (e.g. 1 bowl)">
+        <input type="number" id="newCalIn" placeholder="Calories In">
+        <input type="number" id="newCalOut" placeholder="Calories Out">
+      </div>
+      <div>
+        <button id="addBtn">Add Entry to Table</button>
+        <button id="downloadBtn" class="btn-success" style="margin-left: 10px;">Save Data to CSV</button>
+      </div>
+    </div>
+
+    <!-- BMI Calculator Section -->
+    <div class="add-entry-form animated-section delay-4">
+      <h3>BMI & Weight Goal Calculator</h3>
+      <div class="form-grid">
+        <input type="number" id="userAge" placeholder="Age" value="26">
+        <input type="number" id="userWeight" placeholder="Weight (kg)" value="71">
+        <input type="number" id="userHeight" placeholder="Height (cm)" value="158">
+        <select id="userGender">
+          <option value="male" selected>Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div>
+        <button id="calcBmiBtn" class="btn-success">Calculate Goal & Days Remaining</button>
+      </div>
+      <div id="bmiResult" style="margin-top: 15px; padding: 15px; background-color: var(--header-bg); border: 1px solid var(--border-color); border-radius: 5px; display: none; line-height: 1.6;"></div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-container animated-section delay-5">
+      <h3>Calorie Trends</h3>
+      <canvas id="calorieChart" height="100"></canvas>
+    </div>
+
+    <div class="table-responsive animated-section delay-6">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>
+              <div class="th-container">
+                <span class="sort-header" data-col="0">Date <span class="sort-arrow" id="arrow-0">↕</span></span>
+                <select id="filter-0" class="col-filter"><option value="all">All Dates</option></select>
+              </div>
+            </th>
+            <th>
+              <div class="th-container">
+                <span class="sort-header" data-col="1">Meal <span class="sort-arrow" id="arrow-1">↕</span></span>
+                <select id="filter-1" class="col-filter"><option value="all">All Meals</option></select>
+              </div>
+            </th>
+            <th>
+              <div class="th-container">
+                <span class="sort-header" data-col="2">Food Item <span class="sort-arrow" id="arrow-2">↕</span></span>
+              </div>
+            </th>
+            <th>
+              <div class="th-container">
+                <span class="sort-header" data-col="3">Quantity <span class="sort-arrow" id="arrow-3">↕</span></span>
+              </div>
+            </th>
+            <th>
+              <div class="th-container">
+                <span class="sort-header" data-col="4">Calories In <span class="sort-arrow" id="arrow-4">↕</span></span>
+              </div>
+            </th>
+            <th>
+              <div class="th-container">
+                <span class="sort-header" data-col="5">Calories Out <span class="sort-arrow" id="arrow-5">↕</span></span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data will be inserted here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let rawData = [];
+    let headers = ["Date", "Meal", "Food Item", "Quantity", "Calories In", "Calories Out"];
+    let sortAscending = true;
+    let sortCol = 0;
+    let myChart = null;
+    let displayDataGlobal = [];
+
+    // Theme Toggle Logic
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-theme');
+      themeBtn.textContent = '☀️ Light Mode';
+    }
+    themeBtn.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark-theme');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      themeBtn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+      if (myChart && displayDataGlobal.length > 0) updateChart(displayDataGlobal);
+    });
+
+    // Food Suggestions
+    const lowCalFoods = [
+      "Cucumber (16 kcal/cup)", "Spinach (7 kcal/cup)", "Broccoli (31 kcal/cup)", 
+      "Zucchini (19 kcal/cup)", "Watermelon (46 kcal/cup)", "Celery (14 kcal/cup)", "Strawberries (49 kcal/cup)"
+    ];
+    const foodsToAvoid = [
+      "Sugary sodas", "Deep-fried foods (e.g., French fries)", "Pastries and donuts", 
+      "Processed meats", "High-sugar cereals", "Candies and sweets", "Heavy creamy dressings"
+    ];
+
+    // A simple CSV parser 
+    function parseCSV(text) {
+      const lines = text.trim().split("\n");
+      const result = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        result.push(lines[i].split(","));
+      }
+      return result;
+    }
+
+    function init() {
+      // Set today's date as default in the form
+      document.getElementById('newDate').valueAsDate = new Date();
+      displaySuggestions();
+    }
+
+    function displaySuggestions() {
+      const randomLowCal = lowCalFoods[Math.floor(Math.random() * lowCalFoods.length)];
+      const randomAvoid = foodsToAvoid[Math.floor(Math.random() * foodsToAvoid.length)];
+      const suggestionDiv = document.getElementById('suggestionBox');
+      
+      suggestionDiv.innerHTML = `<strong>💡 Daily Food Tip:</strong> Consider incorporating <em>${randomLowCal}</em> into your meals today. To help stay on track, try to avoid <em>${randomAvoid}</em>.`;
+    }
+
+    function populateFilter() {
+      const dateFilter = document.getElementById('filter-0');
+      const mealFilter = document.getElementById('filter-1');
+      if (!dateFilter || !mealFilter) return;
+
+      const currentDate = dateFilter.value;
+      const currentMeal = mealFilter.value;
+
+      dateFilter.innerHTML = '<option value="all">All Dates</option>';
+      mealFilter.innerHTML = '<option value="all">All Meals</option>';
+      
+      const uniqueDates = [...new Set(rawData.map(row => row[0]))].filter(Boolean).sort();
+      uniqueDates.forEach(date => {
+        const option = document.createElement('option');
+        option.value = date;
+        option.textContent = date;
+        dateFilter.appendChild(option);
+      });
+
+      const uniqueMeals = [...new Set(rawData.map(row => row[1]))].filter(Boolean).sort();
+      uniqueMeals.forEach(meal => {
+        const option = document.createElement('option');
+        option.value = meal;
+        option.textContent = meal;
+        mealFilter.appendChild(option);
+      });
+
+      dateFilter.value = currentDate || 'all';
+      mealFilter.value = currentMeal || 'all';
+    }
+
+    function updateChart(dataToRender) {
+      const ctx = document.getElementById('calorieChart').getContext('2d');
+      const dateMap = {};
+      
+      // Aggregate calories per date
+      dataToRender.forEach(row => {
+        const date = row[0];
+        const meal = row[1] ? row[1].trim() : '';
+        if (!date || meal === 'Summary') return; // Skip summary rows for the chart calculation
+        
+        if (!dateMap[date]) dateMap[date] = { in: 0, out: 0 };
+        const cIn = parseFloat(row[4]);
+        const cOut = parseFloat(row[5]);
+        
+        if (!isNaN(cIn)) dateMap[date].in += cIn;
+        if (!isNaN(cOut)) dateMap[date].out += Math.abs(cOut); // Handle negative exercise values
+      });
+
+      const labels = Object.keys(dateMap).sort();
+      const dataIn = labels.map(d => dateMap[d].in);
+      const dataOut = labels.map(d => dateMap[d].out);
+
+      if (myChart) myChart.destroy();
+
+      const isDark = document.body.classList.contains('dark-theme');
+      Chart.defaults.color = isDark ? '#e0e0e0' : '#666';
+      const gridColor = isDark ? '#333' : '#eee';
+
+      myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Calories In', data: dataIn, backgroundColor: isDark ? '#bb86fc' : '#3498db', borderRadius: 4 },
+            { label: 'Calories Out (Burned)', data: dataOut, backgroundColor: isDark ? '#03dac6' : '#27ae60', borderRadius: 4 }
+          ]
+        },
+        options: { 
+          responsive: true, 
+          scales: { 
+            y: { beginAtZero: true, grid: { color: gridColor } },
+            x: { grid: { color: gridColor } }
+          } 
+        }
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector('#dataTable tbody');
+      const dateFilterValue = document.getElementById('filter-0') ? document.getElementById('filter-0').value : 'all';
+      const mealFilterValue = document.getElementById('filter-1') ? document.getElementById('filter-1').value : 'all';
+      
+      tbody.innerHTML = ''; // Clear current rows
+
+      // Update Sort Arrows
+      for (let i = 0; i < 6; i++) {
+        const arrow = document.getElementById(`arrow-${i}`);
+        if (arrow) {
+          if (sortCol === i) {
+            arrow.textContent = sortAscending ? '▲' : '▼';
+            arrow.style.color = '#333';
+          } else {
+            arrow.textContent = '↕';
+            arrow.style.color = '#999';
+          }
+        }
+      }
+
+      // Filter
+      let displayData = rawData;
+      if (dateFilterValue !== 'all') {
+        displayData = displayData.filter(row => row[0] === dateFilterValue);
+      }
+      if (mealFilterValue !== 'all') {
+        displayData = displayData.filter(row => row[1] === mealFilterValue);
+      }
+
+      // Sort
+      displayData.sort((a, b) => {
+        let valA = a[sortCol] !== undefined ? a[sortCol].trim() : '';
+        let valB = b[sortCol] !== undefined ? b[sortCol].trim() : '';
+
+        // Attempt numeric sort for specific columns (Calories In/Out)
+        if (sortCol === 4 || sortCol === 5) {
+          const numA = parseFloat(valA);
+          const numB = parseFloat(valB);
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return sortAscending ? numA - numB : numB - numA;
+          }
+        }
+
+        if (valA < valB) return sortAscending ? -1 : 1;
+        if (valA > valB) return sortAscending ? 1 : -1;
+        return 0;
+      });
+
+      // Render
+      displayData.forEach(row => {
+        const tr = document.createElement('tr');
+        
+        const mealType = row[1] ? row[1].trim() : '';
+        if (mealType === 'Summary') {
+          tr.classList.add('summary-row');
+        } else if (mealType === 'Exercise') {
+          tr.classList.add('exercise-row');
+        }
+
+        for (let i = 0; i < 6; i++) {
+          const td = document.createElement('td');
+          td.textContent = row[i] !== undefined ? row[i].trim() : '';
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      });
+
+      // Update chart with the currently filtered/displayed data
+      updateChart(displayData);
+      displayDataGlobal = displayData;
+    }
+
+    document.querySelectorAll('.sort-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        const col = parseInt(e.currentTarget.getAttribute('data-col'));
+        if (sortCol === col) {
+          sortAscending = !sortAscending;
+        } else {
+          sortCol = col;
+          sortAscending = true;
+        }
+        renderTable();
+      });
+    });
+
+    document.querySelectorAll('.col-filter').forEach(select => {
+      select.addEventListener('change', renderTable);
+    });
+
+    // Add Entry Logic
+    document.getElementById('addBtn').addEventListener('click', () => {
+      const date = document.getElementById('newDate').value;
+      const meal = document.getElementById('newMeal').value;
+      const food = document.getElementById('newFood').value;
+      const quantity = document.getElementById('newQuantity').value;
+      const calIn = document.getElementById('newCalIn').value;
+      const calOut = document.getElementById('newCalOut').value;
+
+      if (!date) {
+        alert('Please select a date.');
+        return;
+      }
+      if (!meal) {
+        alert('Please select a meal/category.');
+        return;
+      }
+
+      // Sanitize commas to avoid breaking simple CSV parse
+      const safeFood = food.replace(/,/g, ' ');
+      const safeQuantity = quantity.replace(/,/g, ' ');
+
+      // Push to data array
+      const newRow = [date, meal, safeFood, safeQuantity, calIn, calOut];
+      rawData.push(newRow);
+
+      populateFilter();
+      if (document.getElementById('filter-0')) document.getElementById('filter-0').value = 'all'; 
+      if (document.getElementById('filter-1')) document.getElementById('filter-1').value = 'all'; 
+      renderTable();
+
+      // Clear text/number inputs
+      document.getElementById('newFood').value = '';
+      document.getElementById('newQuantity').value = '';
+      document.getElementById('newCalIn').value = '';
+      document.getElementById('newCalOut').value = '';
+    });
+
+    // Upload CSV Logic
+    document.getElementById('csvFileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const text = event.target.result;
+        const parsed = parseCSV(text);
+        if (parsed.length > 0) {
+          headers = parsed[0];
+          rawData = parsed.slice(1);
+          populateFilter();
+          renderTable();
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Save/Download CSV Logic
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+      let csvContent = headers.join(",") + "\n";
+      rawData.forEach(row => {
+        csvContent += row.join(",") + "\n";
+      });
+
+      // Try to save over the existing file using the File System Access API
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: 'data.csv',
+            types: [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(csvContent);
+          await writable.close();
+          alert('Data saved successfully to ' + handle.name);
+          return;
+        } catch (err) {
+          if (err.name !== 'AbortError') console.error('Save failed, falling back to download:', err);
+          else return; // user aborted
+        }
+      }
+
+      // Fallback for older browsers (downloads a new file)
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "data.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // BMI Calculator Logic
+    document.getElementById('calcBmiBtn').addEventListener('click', () => {
+      const age = parseFloat(document.getElementById('userAge').value);
+      const weight = parseFloat(document.getElementById('userWeight').value);
+      const height = parseFloat(document.getElementById('userHeight').value);
+      const gender = document.getElementById('userGender').value;
+
+      if (!age || !weight || !height) {
+        alert("Please fill in age, weight, and height.");
+        return;
+      }
+
+      // Calculate BMI
+      const heightInMeters = height / 100;
+      const bmi = weight / (heightInMeters * heightInMeters);
+      
+      let resultHTML = `<strong>Current BMI:</strong> ${bmi.toFixed(2)} `;
+      if (bmi < 18.5) resultHTML += `(Underweight)<br>`;
+      else if (bmi <= 24.9) resultHTML += `(Normal weight)<br>`;
+      else if (bmi < 30) resultHTML += `(Overweight)<br>`;
+      else resultHTML += `(Obese)<br>`;
+
+      // Calculate BMR (Mifflin-St Jeor equation)
+      let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+      bmr += (gender === 'male') ? 5 : -161;
+      resultHTML += `<strong>Basal Metabolic Rate (BMR):</strong> ${bmr.toFixed(0)} kcal/day<br><hr style="border-top:1px solid #ddd; margin: 10px 0;">`;
+
+      if (bmi > 24.9) {
+        const targetBmi = 24.9;
+        const targetWeight = targetBmi * (heightInMeters * heightInMeters);
+        const weightToLose = weight - targetWeight;
+        const totalCaloriesToBurn = weightToLose * 7700; // ~7700 kcal to burn 1 kg of fat
+        
+        resultHTML += `<strong>Target Weight (for normal BMI of 24.9):</strong> ${targetWeight.toFixed(2)} kg<br>`;
+        resultHTML += `<strong>Weight to Lose:</strong> ${weightToLose.toFixed(2)} kg<br><hr style="border-top:1px solid #ddd; margin: 10px 0;">`;
+
+        // Calculate Averages from Table Data
+        const uniqueDates = [...new Set(rawData.map(row => row[0]))].filter(Boolean);
+        const numDays = uniqueDates.length || 1;
+
+        let totalIn = 0;
+        let totalOut = 0;
+        
+        rawData.forEach(row => {
+          const meal = row[1] ? row[1].trim() : '';
+          if (meal !== 'Summary') {
+            const cIn = parseFloat(row[4]);
+            const cOut = parseFloat(row[5]);
+            if (!isNaN(cIn)) totalIn += cIn;
+            if (!isNaN(cOut)) totalOut += Math.abs(cOut); // Handle negative exercise values safely
+          }
+        });
+
+        const avgIn = totalIn / numDays;
+        const avgOut = totalOut / numDays;
+        const tdee = bmr + avgOut; // Total Daily Energy Expenditure
+        const dailyDeficit = tdee - avgIn;
+
+        resultHTML += `<strong>Average Calories In (from data):</strong> ${avgIn.toFixed(0)} kcal/day<br>`;
+        resultHTML += `<strong>Average Active Calories Out (from data):</strong> ${avgOut.toFixed(0)} kcal/day<br>`;
+        resultHTML += `<strong>Total Energy Expenditure (BMR + Active):</strong> ${tdee.toFixed(0)} kcal/day<br>`;
+        resultHTML += `<strong>Average Daily Calorie Deficit:</strong> ${dailyDeficit.toFixed(0)} kcal/day<br><br>`;
+
+        if (dailyDeficit > 0) {
+          const daysRemaining = totalCaloriesToBurn / dailyDeficit;
+          resultHTML += `<strong style="color: #27ae60; font-size: 16px;">Estimated Days to Reach Target BMI: ${Math.ceil(daysRemaining)} days (~${(daysRemaining/30).toFixed(1)} months)</strong>`;
+        } else {
+          resultHTML += `<strong style="color: #e74c3c; font-size: 16px;">Calorie Deficit Required:</strong> Your current average intake exceeds your expenditure. Reduce calorie intake or increase activity to start losing weight.`;
+        }
+      } else {
+         resultHTML += `You are already at or below a normal BMI! Keep up the healthy lifestyle.`;
+      }
+
+      const resultDiv = document.getElementById('bmiResult');
+      resultDiv.innerHTML = resultHTML;
+      resultDiv.style.display = 'block';
+    });
+
+    // Start execution
+    init();
+  </script>
+</body>
+</html>
