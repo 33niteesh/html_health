@@ -8,55 +8,67 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg-color: #f4f7f6;
-      --text-color: #333;
-      --heading-color: #2c3e50;
-      --card-bg: #fff;
-      --border-color: #ced4da;
-      --hover-bg: #f1f3f5;
-      --primary-color: #3498db;
-      --primary-hover: #2980b9;
-      --success-color: #27ae60;
-      --success-hover: #219653;
-      --header-bg: #f8f9fa;
-      --header-text: #495057;
-      --suggestion-bg: #d1ecf1;
-      --suggestion-text: #0c5460;
-      --suggestion-border: #bee5eb;
-      --table-border: #eee;
-      --summary-bg: #e9ecef;
+      --bg-color: #f5f5f7;
+      --text-color: #1d1d1f;
+      --heading-color: #1d1d1f;
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --border-color: rgba(210, 210, 215, 0.6);
+      --hover-bg: rgba(245, 245, 247, 0.6);
+      --primary-color: #0071e3;
+      --primary-hover: #0077ed;
+      --success-color: #34c759;
+      --success-hover: #2eb050;
+      --header-bg: rgba(255, 255, 255, 0.6);
+      --header-text: #86868b;
+      --suggestion-bg: rgba(255, 255, 255, 0.7);
+      --suggestion-text: #1d1d1f;
+      --suggestion-border: rgba(210, 210, 215, 0.6);
+      --table-border: rgba(210, 210, 215, 0.6);
+      --summary-bg: rgba(245, 245, 247, 0.6);
       --btn-text: #fff;
-      --input-bg: #fff;
+      --input-bg: rgba(255, 255, 255, 0.8);
+      --input-border: rgba(255, 255, 255, 0.9);
+      --glass-blur: blur(20px);
     }
 
     body.dark-theme {
       --bg-color: #121212;
       --text-color: #e0e0e0;
       --heading-color: #e0e0e0;
-      --card-bg: #1e1e1e;
-      --border-color: #333;
-      --hover-bg: #2d2d2d;
-      --primary-color: #bb86fc;
-      --primary-hover: #985eff;
-      --success-color: #03dac6;
-      --success-hover: #018786;
-      --header-bg: #2c2c2c;
+      --card-bg: rgba(30, 30, 30, 0.7);
+      --border-color: rgba(80, 80, 80, 0.5);
+      --hover-bg: rgba(50, 50, 50, 0.6);
+      --primary-color: #2997ff;
+      --primary-hover: #3ca1ff;
+      --success-color: #30d158;
+      --success-hover: #2bc150;
+      --header-bg: rgba(28, 28, 30, 0.6);
       --header-text: #e0e0e0;
-      --suggestion-bg: #004d40;
-      --suggestion-text: #b2dfdb;
-      --suggestion-border: #00695c;
-      --table-border: #333;
-      --summary-bg: #383838;
-      --btn-text: #000;
-      --input-bg: #2c2c2c;
+      --suggestion-bg: rgba(30, 30, 30, 0.7);
+      --suggestion-text: #e0e0e0;
+      --suggestion-border: rgba(80, 80, 80, 0.5);
+      --table-border: rgba(80, 80, 80, 0.5);
+      --summary-bg: rgba(56, 56, 56, 0.6);
+      --btn-text: #fff;
+      --input-bg: rgba(0, 0, 0, 0.8);
+      --input-border: rgba(255, 255, 255, 0.2);
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 20px;
       background-color: var(--bg-color);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
       color: var(--text-color);
-      transition: background-color 0.4s, color 0.4s;
+      transition: background-color 0.4s, color 0.4s, background-image 0.8s ease-in-out;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 {
+      font-weight: 600;
+      letter-spacing: -0.02em;
     }
     h1 {
       margin-bottom: 20px;
@@ -79,7 +91,7 @@
       user-select: none;
     }
     .sort-header:hover {
-      color: #3498db;
+      color: var(--primary-color);
     }
     .sort-arrow {
       font-size: 10px;
@@ -94,17 +106,30 @@
       box-sizing: border-box;
     }
     select, button, input {
-      padding: 8px 12px;
-      font-size: 14px;
-      border: 1px solid var(--border-color);
+      padding: 12px 16px;
+      font-size: 15px;
+      border: 1px solid var(--input-border);
       background-color: var(--input-bg);
       color: var(--text-color);
-      border-radius: 5px;
+      border-radius: 12px;
       outline: none;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    input, select {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.6), inset 0 -1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    body.dark-theme input, body.dark-theme select {
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15), inset 0 -1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
     }
     select {
       cursor: pointer;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
+      background-color: var(--card-bg);
     }
     button {
       background-color: var(--primary-color);
@@ -112,43 +137,54 @@
       cursor: pointer;
       border: none;
       font-weight: 600;
+      border-radius: 980px;
+      letter-spacing: 0.3px;
     }
     button:hover {
       background-color: var(--primary-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     button:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transform: scale(0.98);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
     /* Food Suggestions & Chart Styles */
     .suggestion-box {
       background-color: var(--suggestion-bg);
       color: var(--suggestion-text);
-      padding: 15px 20px;
+      padding: 18px 24px;
       border: 1px solid var(--suggestion-border);
-      border-radius: 8px;
-      margin-bottom: 20px;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+      margin-bottom: 24px;
       font-size: 15px;
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
     }
     .chart-container {
       background: var(--card-bg);
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      padding: 24px;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
     }
     
     /* New Form Styles */
     .add-entry-form {
       background: var(--card-bg);
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-      transition: background-color 0.4s;
+      padding: 24px;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      transition: background-color 0.4s, border-color 0.4s;
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
     }
     .add-entry-form h3 {
       margin-top: 0;
@@ -175,9 +211,12 @@
     .table-responsive {
       overflow-x: auto;
       background: var(--card-bg);
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      transition: background-color 0.4s;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+      transition: background-color 0.4s, border-color 0.4s;
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
     }
     table {
       width: 100%;
@@ -186,13 +225,18 @@
     }
     th, td {
       border-bottom: 1px solid var(--table-border);
-      padding: 12px 15px;
+      padding: 14px 16px;
       text-align: left;
     }
     th {
       background-color: var(--header-bg);
       font-weight: 600;
       color: var(--header-text);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
     tr:last-child td {
       border-bottom: none;
@@ -203,7 +247,7 @@
     /* Summary rows styling */
     tr.summary-row {
       background-color: var(--summary-bg);
-      font-weight: bold;
+      font-weight: 600;
     }
     tr.exercise-row {
       color: #27ae60;
@@ -214,18 +258,28 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
+      background: var(--card-bg);
+      padding: 16px 24px;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+    }
+    .header-container h1 {
+      margin-bottom: 0;
     }
 
     /* Animations */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes appleFadeIn {
+      0% { opacity: 0; transform: translateY(16px) scale(0.99); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     .animated-section {
       opacity: 0;
-      animation: fadeInUp 0.6s ease-out forwards;
+      animation: appleFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     .delay-1 { animation-delay: 0.1s; }
     .delay-2 { animation-delay: 0.2s; }
@@ -411,10 +465,28 @@
       return result;
     }
 
+    function setRandomBackground() {
+      const bgImages = [
+        "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2000&auto=format&fit=crop", // Healthy food
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2000&auto=format&fit=crop", // Yoga
+        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2000&auto=format&fit=crop", // Gym
+        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2000&auto=format&fit=crop", // Healthy eating
+        "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2000&auto=format&fit=crop", // Weights
+        "https://images.unsplash.com/photo-1540420773420-3366772f4999?q=80&w=2000&auto=format&fit=crop", // Salad
+        "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2000&auto=format&fit=crop"  // Runner
+      ];
+      
+      // Pick a random image on every load
+      const randomIndex = Math.floor(Math.random() * bgImages.length);
+      const selectedImage = bgImages[randomIndex];
+      document.body.style.backgroundImage = `url('${selectedImage}')`;
+    }
+
     function init() {
       // Set today's date as default in the form
       document.getElementById('newDate').valueAsDate = new Date();
       displaySuggestions();
+      setRandomBackground();
     }
 
     function displaySuggestions() {
@@ -481,7 +553,8 @@
       if (myChart) myChart.destroy();
 
       const isDark = document.body.classList.contains('dark-theme');
-      Chart.defaults.color = isDark ? '#e0e0e0' : '#666';
+      Chart.defaults.color = isDark ? '#86868b' : '#86868b'; // Apple secondary text color
+      Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
       const gridColor = isDark ? '#333' : '#eee';
 
       myChart = new Chart(ctx, {
