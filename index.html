@@ -56,16 +56,31 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 20px;
+      margin: 0;
+      padding: 20px;
       background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.4s, color 0.4s;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    /* Fixed Background Layer */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background-image: inherit; /* Inherits the random image set by JavaScript */
       background-size: cover;
       background-position: center;
-      background-attachment: fixed;
-      background-repeat: no-repeat;
-      color: var(--text-color);
-      transition: background-color 0.4s, color 0.4s, background-image 0.8s ease-in-out;
-      -webkit-font-smoothing: antialiased;
+      transition: background-image 0.8s ease-in-out;
     }
+
     h1, h2, h3 {
       font-weight: 600;
       letter-spacing: -0.02em;
@@ -318,16 +333,13 @@
       <button id="themeToggleBtn">🌙 Dark Mode</button>
     </div>
 
-    <!-- Daily Food Tip Section -->
     <div id="suggestionBox" class="suggestion-box animated-section delay-1"></div>
 
-    <!-- File Upload Section -->
     <div class="add-entry-form animated-section delay-2">
       <h3>Load Data</h3>
       <input type="file" id="csvFileInput" accept=".csv">
     </div>
 
-    <!-- New Form Section -->
     <div class="add-entry-form animated-section delay-3">
       <h3>Add New Entry</h3>
       <div class="form-grid">
@@ -354,7 +366,6 @@
       </div>
     </div>
 
-    <!-- BMI Calculator Section -->
     <div class="add-entry-form animated-section delay-4">
       <h3>BMI & Weight Goal Calculator</h3>
       <div class="form-grid">
@@ -372,7 +383,6 @@
       <div id="bmiResult" style="margin-top: 15px; padding: 15px; background-color: var(--header-bg); border: 1px solid var(--border-color); border-radius: 5px; display: none; line-height: 1.6;"></div>
     </div>
 
-    <!-- Chart Section -->
     <div class="chart-container animated-section delay-5">
       <h3>Calorie Trends</h3>
       <canvas id="calorieChart" height="100"></canvas>
@@ -417,8 +427,7 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Data will be inserted here -->
-        </tbody>
+          </tbody>
       </table>
     </div>
   </div>
