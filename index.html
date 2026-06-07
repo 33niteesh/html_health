@@ -394,6 +394,12 @@
       <canvas id="calorieChart" height="100"></canvas>
     </div>
 
+    <div id="dataSummary" class="suggestion-box animated-section delay-7" style="display: none; text-align: center; font-size: 16px;">
+      <strong>Total Intake:</strong> <span id="totIn">0</span> kcal &nbsp;|&nbsp; 
+      <strong>Exercise Outcome:</strong> <span id="totEx">0</span> kcal &nbsp;|&nbsp;
+      <strong>Total Outcome:</strong> <span id="totOut">0</span> kcal
+    </div>
+
     <div class="table-responsive animated-section delay-7">
       <table id="dataTable">
         <thead>
@@ -641,6 +647,35 @@
       });
     }
 
+    function updateSummary(data) {
+      let totalIn = 0;
+      let totalOut = 0;
+      let exerciseOut = 0;
+
+      data.forEach(row => {
+        const meal = row[1] ? row[1].trim() : '';
+        if (meal !== 'Summary') {
+          const cIn = parseFloat(row[4]);
+          const cOut = parseFloat(row[5]);
+          if (!isNaN(cIn)) totalIn += cIn;
+          if (!isNaN(cOut)) {
+            totalOut += Math.abs(cOut);
+            if (meal.toLowerCase() === 'exercise') {
+              exerciseOut += Math.abs(cOut);
+            }
+          }
+        }
+      });
+
+      const summaryDiv = document.getElementById('dataSummary');
+      if (summaryDiv) {
+        summaryDiv.style.display = 'block';
+        document.getElementById('totIn').textContent = totalIn.toFixed(0);
+        document.getElementById('totEx').textContent = exerciseOut.toFixed(0);
+        document.getElementById('totOut').textContent = totalOut.toFixed(0);
+      }
+    }
+
     function renderTable() {
       const tbody = document.querySelector('#dataTable tbody');
       const dateFilterValue = document.getElementById('filter-0') ? document.getElementById('filter-0').value : 'all';
@@ -684,8 +719,36 @@
           }
         }
 
-        if (valA < valB) return sortAscending ? -1 : 1;
-        if (valA > valB) return sortAscending ? 1 : -1;
+        let cmp = 0;
+        if (valA < valB) cmp = -1;
+        else if (valA > valB) cmp = 1;
+        
+        if (cmp !== 0) return sortAscending ? cmp : -cmp;
+
+        // Custom sort for same date: push Exercise and Summary to the bottom
+        if (sortCol === 0) {
+          const mealA = a[1] ? a[1].trim() : '';
+          const mealB = b[1] ? b[1].trim() : '';
+          
+          const getMealWeight = (meal) => {
+            if (meal === 'Exercise') return 1;
+            if (meal === 'Summary') return 2;
+            return 0;
+          };
+          
+          const weightA = getMealWeight(mealA);
+          const weightB = getMealWeight(mealB);
+          
+          if (weightA !== weightB) return weightA - weightB;
+
+          if (mealA === 'Summary' && mealB === 'Summary') {
+            const foodA = a[2] ? a[2].trim() : '';
+            const foodB = b[2] ? b[2].trim() : '';
+            if (foodA === 'Total Intake' && foodB !== 'Total Intake') return -1;
+            if (foodB === 'Total Intake' && foodA !== 'Total Intake') return 1;
+          }
+        }
+
         return 0;
       });
 
@@ -709,6 +772,7 @@
       });
 
       updateChart(displayData);
+      updateSummary(displayData);
       displayDataGlobal = displayData;
     }
 
@@ -771,6 +835,40 @@
         if (parsed.length > 0) {
           headers = parsed[0];
           rawData = parsed.slice(1);
+          
+          rawData.sort((a, b) => {
+            const dateA = a[0] ? a[0].trim() : '';
+            const dateB = b[0] ? b[0].trim() : '';
+            if (dateA < dateB) return -1;
+            if (dateA > dateB) return 1;
+            
+            const mealA = a[1] ? a[1].trim() : '';
+            const mealB = b[1] ? b[1].trim() : '';
+            
+            const getMealWeight = (meal) => {
+              if (meal === 'Exercise') return 1;
+              if (meal === 'Summary') return 2;
+              return 0;
+            };
+            
+            const weightA = getMealWeight(mealA);
+            const weightB = getMealWeight(mealB);
+            
+            if (weightA !== weightB) return weightA - weightB;
+            
+            if (mealA === 'Summary' && mealB === 'Summary') {
+              const foodA = a[2] ? a[2].trim() : '';
+              const foodB = b[2] ? b[2].trim() : '';
+              if (foodA === 'Total Intake' && foodB !== 'Total Intake') return -1;
+              if (foodB === 'Total Intake' && foodA !== 'Total Intake') return 1;
+            }
+
+            if (mealA < mealB) return -1;
+            if (mealA > mealB) return 1;
+            
+            return 0;
+          });
+
           populateFilter();
           renderTable();
         }
